@@ -28,7 +28,7 @@ module.exports = {
         onDelete: 'SET NULL'
       },
       type: {
-        type: Sequelize.ENUM
+        type: Sequelize.ENUM('like', 'dislike', 'love', 'wow', 'haha', 'sad', 'angry')
       },
       createdAt: {
         allowNull: false,
