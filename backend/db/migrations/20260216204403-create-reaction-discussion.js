@@ -2,7 +2,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('ReactionComments', {
+    await queryInterface.createTable('ReactionDiscussions', {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -10,10 +10,22 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       user_id: {
-        type: Sequelize.INTEGER
+        type: Sequelize.INTEGER,
+        references: {
+          model: 'Users',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
       },
-      comment_id: {
-        type: Sequelize.INTEGER
+      disscussion_id: {
+        type: Sequelize.INTEGER,
+        references: {
+          model: 'Discussions',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
       },
       type: {
         type: Sequelize.ENUM
@@ -29,6 +41,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('ReactionComments');
+    await queryInterface.dropTable('ReactionDiscussions');
   }
 };
