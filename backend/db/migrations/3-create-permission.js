@@ -2,30 +2,15 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('GroupRoles', {
+    await queryInterface.createTable('Permissions', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      g_id: {
-        type: Sequelize.INTEGER,
-        references: {
-          model: 'Groups',
-          key: 'id'
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'SET NULL'
-      },
-      r_id: {
-        type: Sequelize.INTEGER,
-        references: {
-          model: 'Roles',
-          key: 'id'
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'SET NULL'
+      name: {
+        type: Sequelize.STRING
       },
       createdAt: {
         allowNull: false,
@@ -38,6 +23,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('GroupRoles');
+    await queryInterface.dropTable('Permissions');
   }
 };
