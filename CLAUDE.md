@@ -26,7 +26,6 @@ npm start                  # Production server
 npm run dev                # Vite dev server (port 5173)
 npm run build              # Production build
 npm run lint               # ESLint
-npm run preview            # Preview production build
 ```
 
 ### Database (Sequelize CLI, from `backend/`)
@@ -43,32 +42,45 @@ docker-compose exec backend npx sequelize-cli db:migrate
 docker-compose exec backend npx sequelize-cli db:seed:all
 ```
 
+No automated test framework is configured. Manual API tests are documented in `test_backend.md` (curl commands).
+
 ## Architecture
 
 ### Backend (`backend/`)
-- **Framework**: Express.js 5 (CommonJS)
+- **Framework**: Express.js 5 (CommonJS modules)
 - **ORM**: Sequelize 6 with PostgreSQL driver (`pg`)
-- **Structure**:
-  - `src/index.js` — App entry point, mounts routes and middleware
-  - `src/routes/` — Route modules: `auth.js`, `users.js`, `posts.js` (discussions)
-  - `src/middlewares/` — Error handler (`errorHandler.js`) and 404 handler (`notFound.js`)
-  - `db/models/` — Sequelize model definitions (configured via `db/models/index.js`)
-  - `db/migrations/` — Schema migrations (run in order)
-  - `db/seeders/` — Seed data for roles, permissions, users, and role-permission mappings
-  - `config/config.js` — Sequelize DB config (reads from env vars)
-  - `.sequelizerc` — Sequelize CLI path configuration
+- **Entry**: `src/index.js` → `src/app.js` (Express config, middleware, route mounting)
+- **Config**: `src/config/index.js` exports `env`, `port`, `jwtSecret`, `jwtExpiresIn`, `frontendUrl`
+- **Routes** (`src/routes/`): `auth.js`, `users.js`, `discussions.js`, `comments.js` (sub-router merged via `mergeParams`)
+- **Middleware** (`src/middleware/`):
+  - `authenticate.js` — JWT from cookie (`session_token`) or `Authorization: Bearer` header; validates against Sessions table; loads user with roles+permissions; also exports `optionalAuth`
+  - `authorize.js` — `requirePermission(...perms)` (OR logic) and `hasPermission(req, name)` helper
+  - `validate.js` — Custom rule-based body validator; also exports `validateId()` and `REACTION_TYPES`
+  - `errorHandler.js` — Handles Sequelize validation/unique errors as 400
+  - `notFound.js` — Catch-all 404
+- **Services** (`src/services/auth.js`): JWT generation/verification, bcrypt hashing, session CRUD, user registration (with transaction), role caching
+- **Utils** (`src/utils/sanitize.js`): HTML escaping for user content (title, content fields)
+- **Controllers**: Directory exists but is empty — all logic lives directly in route handlers
 
 ### Frontend (`frontend/`)
 - **Framework**: React 19 with Vite 7 (ES Modules)
-- **Entry**: `src/main.jsx` → `src/App.jsx`
-- **Linting**: ESLint 9 flat config with React Hooks and React Refresh plugins
+- **API layer** (`src/api/client.js`): Custom fetch wrapper with `credentials: 'include'`; base URL from `VITE_BACKEND_URL` (defaults to `http://localhost:3000`)
+- **Auth** (`src/context/AuthContext.jsx`): Provides `user`, `login`, `register`, `logout`, `hasPermission`; restores session via `GET /auth/me` on mount
+- **Hook** (`src/hooks/useAuth.js`): `useAuth()` context accessor
+- **Pages** (`src/pages/`): `LoginPage`, `RegisterPage`, `HomePage` (paginated discussions), `DiscussionPage` (full thread with comments/reactions)
+- **Components** (`src/components/`): `Navbar`, `ProtectedRoute`, `DiscussionCard`, `DiscussionForm`, `CommentForm`, `ReactionBar`, `Pagination`
+- **Styling**: Hand-written CSS with custom properties in `index.css`, component classes in `App.css`
+- **Linting**: ESLint 9 flat config; `no-unused-vars` ignores `/^[A-Z_]/`
 
 ### Database Schema
 PostgreSQL 15 with RBAC design:
-- **Core**: Users, Roles, Permissions, Discussions, Comments, Sessions
-- **Junction**: UserRoles, RolePermissions, ReactionDiscussion, ReactionComment
+- **Core tables**: Users, Roles, Permissions, Discussions, Comments, Sessions
+- **Junction tables**: UserRoles (`u_id`/`r_id`), RolePermissions (`r_id`/`p_id`), ReactionDiscussions, ReactionComments
+- **Known typo**: `ReactionDiscussions` uses `disscussion_id` (double 's') — consistent throughout models, migrations, and routes
+- **Reaction types** (ENUM): `like`, `dislike`, `love`, `wow`, `haha`, `sad`, `angry`
 - **Seeded roles**: Admin, Moderator, User, Guest, Banned
-- **Seeded users**: admin_alice (Admin), mod_bob (Moderator), user_charlie (User)
+- **Seeded users**: `admin_alice`/`admin123`, `mod_bob`/`mod123`, `user_charlie`/`user123`, `user_diana`/`user123`, `banned_eve`/`banned123`
+- **Migrations** are numbered 1–9, then 91 (Sessions)
 
 ### Docker Services
 | Service    | Port | Description               |
@@ -78,14 +90,36 @@ PostgreSQL 15 with RBAC design:
 | db         | 5432 | PostgreSQL 15             |
 | pgadmin    | 5050 | Database admin UI (admin@admin.com / root) |
 
+## Key Conventions
+
+### API Response Shape
+- Success: `{ success: true, data: { ... } }`
+- Error: `{ success: false, error: "message" }`
+- Paginated: `{ success: true, data: { items: [], pagination: { page, limit, total, pages } } }`
+
+### Permission Naming
+Format: `resource.action.scope` — e.g., `discussion.create`, `comment.edit.own`, `user.ban.any`. The `.own` vs `.any` distinction is enforced in route handlers by checking resource ownership after middleware passes.
+
+### Sequelize Patterns
+- Models use factory pattern: `(sequelize, DataTypes) => { class X extends Model {...}; X.init({...}); return X; }`
+- Multi-table writes use Sequelize transactions with try/catch rollback
+- `db/models/index.js` auto-loads all model files and calls `associate()`
+
+### Security
+- Rate limiting on auth endpoints (20 req/15 min)
+- Helmet headers, CORS locked to `FRONTEND_URL`, HttpOnly cookies
+- Server-side session invalidation on logout
+- HTML escaping on user-generated content
+
 ## Environment Variables
 
-Defined in root `.env`, used by Docker Compose and backend config:
+Defined in root `.env`:
 - `NODE_ENV`, `PORT` — App environment and port
 - `DB_USERNAME`, `DB_PASSWORD`, `DB_NAME`, `DB_HOST`, `DB_PORT` — PostgreSQL connection
-
-In development config (`config/config.js`), `DB_HOST` defaults to `localhost`; in test/docker it uses the `db` service hostname.
+- `JWT_SECRET`, `JWT_EXPIRES_IN` — JWT configuration
+- `FRONTEND_URL` — Backend CORS origin (defaults to `http://localhost:5173`)
+- `VITE_BACKEND_URL` — Frontend API base URL (defaults to `http://localhost:3000`)
 
 ## Current State
 
-API routes (`/auth/*`, `/users/*`, `/posts/*`) are stubbed with 501 responses — not yet implemented. The `/health` endpoint works. Frontend connects to backend health check with a hardcoded IP address.
+Backend API is fully implemented: auth (register/login/logout/me), discussions CRUD with reactions, comments CRUD with reactions, user management with ban/unban. Frontend has pages and components built but `App.jsx` still needs to be wired up with React Router and `AuthProvider`. Admin and profile pages referenced in `Navbar` do not exist yet.

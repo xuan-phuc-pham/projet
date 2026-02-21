@@ -5,6 +5,17 @@ const { User, Role, Permission, Session, UserRole, sequelize } = require('../../
 
 const SALT_ROUNDS = 10;
 
+// Cache for role lookups (role_name -> id)
+const roleCache = {};
+
+async function getRoleByName(roleName) {
+  if (roleCache[roleName]) return roleCache[roleName];
+  const role = await Role.findOne({ where: { role_name: roleName } });
+  if (!role) throw new Error(`Role "${roleName}" not found in database`);
+  roleCache[roleName] = role;
+  return role;
+}
+
 function generateToken(payload) {
   return jwt.sign(payload, jwtSecret, { expiresIn: jwtExpiresIn });
 }
@@ -76,10 +87,11 @@ async function registerUser({ username, password, fname, lname }) {
       lname,
     }, { transaction });
 
-    // Assign default "User" role (id: 3)
+    // Assign default "User" role
+    const userRole = await getRoleByName('User');
     await UserRole.create({
       u_id: user.id,
-      r_id: 3,
+      r_id: userRole.id,
     }, { transaction });
 
     await transaction.commit();
@@ -102,4 +114,5 @@ module.exports = {
   deleteAllUserSessions,
   getUserWithPermissions,
   registerUser,
+  getRoleByName,
 };

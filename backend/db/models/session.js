@@ -16,6 +16,7 @@ module.exports = (sequelize, DataTypes) => {
     session: {
       type: DataTypes.STRING,
       allowNull: false,
+      unique: true,
     },
   }, {
     sequelize,

@@ -1,4 +1,4 @@
-const authService = require('../services/auth');
+const authService = require("../services/auth");
 
 async function authenticate(req, res, next) {
   try {
@@ -7,13 +7,15 @@ async function authenticate(req, res, next) {
 
     if (!token) {
       const authHeader = req.headers.authorization;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
+      if (authHeader && authHeader.startsWith("Bearer ")) {
         token = authHeader.slice(7);
       }
     }
 
     if (!token) {
-      return res.status(401).json({ success: false, error: 'Authentication required' });
+      return res
+        .status(401)
+        .json({ success: false, error: "Authentication required" });
     }
 
     // Verify JWT
@@ -21,25 +23,31 @@ async function authenticate(req, res, next) {
     try {
       decoded = authService.verifyToken(token);
     } catch (err) {
-      return res.status(401).json({ success: false, error: 'Invalid or expired token' });
+      return res
+        .status(401)
+        .json({ success: false, error: "Invalid or expired token" });
     }
 
     // Check session exists in DB (allows server-side revocation)
     const session = await authService.findSession(token);
     if (!session) {
-      return res.status(401).json({ success: false, error: 'Session expired or revoked' });
+      return res
+        .status(401)
+        .json({ success: false, error: "Session expired or revoked" });
     }
 
     // Load user with roles and permissions
     const result = await authService.getUserWithPermissions(decoded.userId);
     if (!result) {
-      return res.status(401).json({ success: false, error: 'User not found' });
+      return res.status(401).json({ success: false, error: "User not found" });
     }
 
     // Check if user is banned
-    const isBanned = result.user.roles.some(r => r.role_name === 'Banned');
+    const isBanned = result.user.roles.some((r) => r.role_name === "Banned");
     if (isBanned) {
-      return res.status(403).json({ success: false, error: 'Account is banned' });
+      return res
+        .status(403)
+        .json({ success: false, error: "Account is banned" });
     }
 
     req.user = result.user;
@@ -58,7 +66,7 @@ async function optionalAuth(req, res, next) {
     let token = req.cookies?.session_token;
     if (!token) {
       const authHeader = req.headers.authorization;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
+      if (authHeader && authHeader.startsWith("Bearer ")) {
         token = authHeader.slice(7);
       }
     }

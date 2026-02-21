@@ -5,7 +5,13 @@ function validate(rules) {
     const errors = [];
 
     for (const [field, rule] of Object.entries(rules)) {
-      const value = req.body[field];
+      let value = req.body[field];
+
+      // Trim string values before validation
+      if (typeof value === 'string') {
+        value = value.trim();
+        req.body[field] = value;
+      }
 
       if (rule.required && (value === undefined || value === null || value === '')) {
         errors.push(`${field} is required`);
@@ -18,7 +24,7 @@ function validate(rules) {
           continue;
         }
 
-        if (rule.minLength && typeof value === 'string' && value.trim().length < rule.minLength) {
+        if (rule.minLength && typeof value === 'string' && value.length < rule.minLength) {
           errors.push(`${field} must be at least ${rule.minLength} characters`);
         }
 
@@ -44,4 +50,16 @@ function validate(rules) {
   };
 }
 
-module.exports = { validate, REACTION_TYPES };
+function validateId(...paramNames) {
+  return (req, res, next) => {
+    for (const name of paramNames) {
+      const value = req.params[name];
+      if (value !== undefined && (!/^\d+$/.test(value) || parseInt(value) < 1)) {
+        return res.status(400).json({ success: false, error: `Invalid ${name}` });
+      }
+    }
+    next();
+  };
+}
+
+module.exports = { validate, validateId, REACTION_TYPES };
