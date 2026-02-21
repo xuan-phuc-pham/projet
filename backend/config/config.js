@@ -1,18 +1,19 @@
+require('dotenv').config();
 require('dotenv').config({ path: '../.env' });
 
 module.exports = {
   "development": {
-    "username": process.env.DB_USERNAME,
-    "password": process.env.DB_PASSWORD,
-    "database": process.env.DB_NAME,
-    "host": "localhost",
+    "username": process.env.DB_USERNAME || 'user',
+    "password": process.env.DB_PASSWORD || 'password',
+    "database": process.env.DB_NAME || 'mydatabase',
+    "host": process.env.DB_HOST || 'localhost',
     "dialect": "postgres"
   },
   "test": {
-    "username": process.env.DB_USERNAME,
-    "password": process.env.DB_PASSWORD,
-    "database": process.env.DB_NAME,
-    "host": process.env.DB_HOST,
+    "username": process.env.DB_USERNAME || 'user',
+    "password": process.env.DB_PASSWORD || 'password',
+    "database": process.env.DB_NAME || 'mydatabase',
+    "host": process.env.DB_HOST || 'localhost',
     "dialect": "postgres"
   },
   // "production": {

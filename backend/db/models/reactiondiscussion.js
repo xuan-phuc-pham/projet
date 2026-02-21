@@ -1,25 +1,31 @@
 'use strict';
-const {
-  Model
-} = require('sequelize');
+const { Model } = require('sequelize');
+
 module.exports = (sequelize, DataTypes) => {
   class ReactionDiscussion extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
     static associate(models) {
-      // define association here
+      ReactionDiscussion.belongsTo(models.User, { foreignKey: 'user_id', as: 'user' });
+      ReactionDiscussion.belongsTo(models.Discussion, { foreignKey: 'disscussion_id', as: 'discussion' });
     }
   }
+
   ReactionDiscussion.init({
-    user_id: DataTypes.INTEGER,
-    disscussion_id: DataTypes.INTEGER,
-    type: DataTypes.ENUM
+    user_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    disscussion_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    type: {
+      type: DataTypes.ENUM('like', 'dislike', 'love', 'wow', 'haha', 'sad', 'angry'),
+      allowNull: false,
+    },
   }, {
     sequelize,
     modelName: 'ReactionDiscussion',
   });
+
   return ReactionDiscussion;
 };
