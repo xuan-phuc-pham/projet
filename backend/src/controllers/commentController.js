@@ -2,11 +2,14 @@ const { Comment, Discussion, User, ReactionComment } = require('../../db/models'
 const { hasPermission } = require('../middleware/authorize');
 const { escapeHtml } = require('../utils/sanitize');
 
+
+// Fonction liee aux commentaires des discussions
+
 const list = async (req, res, next) => {
   try {
     const discussion = await Discussion.findByPk(req.params.discussionId);
     if (!discussion) {
-      return res.status(404).json({ success: false, error: 'Discussion not found' });
+      return res.status(404).json({ success: false, error: 'Discussion pas trouve' });
     }
 
     const page = Math.max(1, parseInt(req.query.page) || 1);
@@ -41,7 +44,7 @@ const create = async (req, res, next) => {
   try {
     const discussion = await Discussion.findByPk(req.params.discussionId);
     if (!discussion) {
-      return res.status(404).json({ success: false, error: 'Discussion not found' });
+      return res.status(404).json({ success: false, error: 'Discussion pas trouve' });
     }
 
     const comment = await Comment.create({
@@ -72,14 +75,14 @@ const update = async (req, res, next) => {
     });
 
     if (!comment) {
-      return res.status(404).json({ success: false, error: 'Comment not found' });
+      return res.status(404).json({ success: false, error: 'Commentaire pas trouvé' });
     }
 
     const canEditAny = hasPermission(req, 'comment.edit.any');
     if (!canEditAny && comment.user_id !== req.user.id) {
       return res.status(403).json({
         success: false,
-        error: 'You can only edit your own comments',
+        error: 'Vous pouvez seulement modifier vos propres commentaires',
       });
     }
 
@@ -107,14 +110,14 @@ const remove = async (req, res, next) => {
     });
 
     if (!comment) {
-      return res.status(404).json({ success: false, error: 'Comment not found' });
+      return res.status(404).json({ success: false, error: 'Commentaire pas trouvé' });
     }
 
     const canDeleteAny = hasPermission(req, 'comment.delete.any');
     if (!canDeleteAny && comment.user_id !== req.user.id) {
       return res.status(403).json({
         success: false,
-        error: 'You can only delete your own comments',
+        error: 'Vous pouvez seulement supprimer vos propres commentaires',
       });
     }
 
@@ -122,7 +125,7 @@ const remove = async (req, res, next) => {
     await ReactionComment.destroy({ where: { comment_id: comment.id } });
     await comment.destroy();
 
-    res.json({ success: true, data: { message: 'Comment deleted' } });
+    res.json({ success: true, data: { message: 'Commentaire supprime' } });
   } catch (err) {
     next(err);
   }
@@ -138,7 +141,7 @@ const addReaction = async (req, res, next) => {
     });
 
     if (!comment) {
-      return res.status(404).json({ success: false, error: 'Comment not found' });
+      return res.status(404).json({ success: false, error: 'Commentaire pas trouve' });
     }
 
     const existing = await ReactionComment.findOne({
@@ -146,6 +149,7 @@ const addReaction = async (req, res, next) => {
     });
 
     let reaction;
+    let created = false;
     if (existing) {
       await existing.update({ type: req.body.type });
       reaction = existing;
@@ -155,9 +159,10 @@ const addReaction = async (req, res, next) => {
         comment_id: comment.id,
         type: req.body.type,
       });
+      created = true;
     }
 
-    res.status(201).json({ success: true, data: { reaction } });
+    res.status(created ? 201 : 200).json({ success: true, data: { reaction } });
   } catch (err) {
     next(err);
   }
@@ -170,10 +175,10 @@ const removeReaction = async (req, res, next) => {
     });
 
     if (!deleted) {
-      return res.status(404).json({ success: false, error: 'Reaction not found' });
+      return res.status(404).json({ success: false, error: 'Reaction pas trouvé' });
     }
 
-    res.json({ success: true, data: { message: 'Reaction removed' } });
+    res.json({ success: true, data: { message: 'Reaction supprime' } });
   } catch (err) {
     next(err);
   }

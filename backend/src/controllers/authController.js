@@ -1,13 +1,17 @@
 const { User } = require('../../db/models');
 const authService = require('../services/auth');
 
+// Je mettre les fonctions lié aux authentifications
+// Utisation de cookie httpOnly
+
+
 const register = async (req, res, next) => {
   try {
     const { username, password, fname, lname } = req.body;
 
     const existing = await User.findOne({ where: { username } });
     if (existing) {
-      return res.status(409).json({ success: false, error: 'Username already taken' });
+      return res.status(409).json({ success: false, error: 'Utilisateur existant' });
     }
 
     const user = await authService.registerUser({ username, password, fname, lname });
@@ -18,7 +22,7 @@ const register = async (req, res, next) => {
     res.cookie('session_token', token, {
       httpOnly: true,
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV === 'production', 
       maxAge: 24 * 60 * 60 * 1000, // 24h
     });
 
@@ -34,12 +38,12 @@ const login = async (req, res, next) => {
 
     const user = await User.findOne({ where: { username } });
     if (!user) {
-      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+      return res.status(401).json({ success: false, error: 'User pas trouve' });
     }
 
     const validPassword = await authService.comparePassword(password, user.password);
     if (!validPassword) {
-      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+      return res.status(401).json({ success: false, error: 'Wrong mdp' });
     }
 
     const token = authService.generateToken({ userId: user.id });
@@ -64,7 +68,7 @@ const logout = async (req, res, next) => {
   try {
     await authService.deleteSession(req.token);
     res.clearCookie('session_token');
-    res.json({ success: true, data: { message: 'Logged out successfully' } });
+    res.json({ success: true, data: { message: 'Deconnecte' } });
   } catch (err) {
     next(err);
   }

@@ -2,6 +2,10 @@ const { Discussion, User, Comment, ReactionDiscussion, ReactionComment, sequeliz
 const { hasPermission } = require('../middleware/authorize');
 const { escapeHtml } = require('../utils/sanitize');
 
+
+// Fonction lié aux discussions ( possédé par utilisateurs, comme Device en cours)
+// On utilise la middleware hasPermission pour la RBAC
+
 const list = async (req, res, next) => {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1);
@@ -50,7 +54,7 @@ const getById = async (req, res, next) => {
     });
 
     if (!discussion) {
-      return res.status(404).json({ success: false, error: 'Discussion not found' });
+      return res.status(404).json({ success: false, error: 'Discussion pas trouvé' });
     }
 
     res.json({ success: true, data: { discussion } });
@@ -81,12 +85,12 @@ const update = async (req, res, next) => {
   try {
     const discussion = await Discussion.findByPk(req.params.id);
     if (!discussion) {
-      return res.status(404).json({ success: false, error: 'Discussion not found' });
+      return res.status(404).json({ success: false, error: 'Discussion pas trouve' });
     }
 
     const canEditAny = hasPermission(req, 'discussion.edit.any');
     if (!canEditAny && discussion.owner_id !== req.user.id) {
-      return res.status(403).json({ success: false, error: 'You can only edit your own discussions' });
+      return res.status(403).json({ success: false, error: 'Vous pouvez seulement modifier vos propres discussions' });
     }
 
     const updates = {};
@@ -109,12 +113,12 @@ const remove = async (req, res, next) => {
   try {
     const discussion = await Discussion.findByPk(req.params.id);
     if (!discussion) {
-      return res.status(404).json({ success: false, error: 'Discussion not found' });
+      return res.status(404).json({ success: false, error: 'Discussion pas trouve' });
     }
 
     const canDeleteAny = hasPermission(req, 'discussion.delete.any');
     if (!canDeleteAny && discussion.owner_id !== req.user.id) {
-      return res.status(403).json({ success: false, error: 'You can only delete your own discussions' });
+      return res.status(403).json({ success: false, error: 'Vous pouvez seulement supprimer vos propres discussions' });
     }
 
     // Delete related data in a transaction
@@ -143,7 +147,7 @@ const remove = async (req, res, next) => {
       throw err;
     }
 
-    res.json({ success: true, data: { message: 'Discussion deleted' } });
+    res.json({ success: true, data: { message: 'Discussion supprime' } });
   } catch (err) {
     next(err);
   }
@@ -153,7 +157,7 @@ const addReaction = async (req, res, next) => {
   try {
     const discussion = await Discussion.findByPk(req.params.id);
     if (!discussion) {
-      return res.status(404).json({ success: false, error: 'Discussion not found' });
+      return res.status(404).json({ success: false, error: 'Discussion pas trouve' });
     }
 
     // Upsert: update if exists, create if not
@@ -162,6 +166,7 @@ const addReaction = async (req, res, next) => {
     });
 
     let reaction;
+    let created = false;
     if (existing) {
       await existing.update({ type: req.body.type });
       reaction = existing;
@@ -171,9 +176,10 @@ const addReaction = async (req, res, next) => {
         disscussion_id: discussion.id,
         type: req.body.type,
       });
+      created = true;
     }
 
-    res.status(201).json({ success: true, data: { reaction } });
+    res.status(created ? 201 : 200).json({ success: true, data: { reaction } });
   } catch (err) {
     next(err);
   }
@@ -186,10 +192,10 @@ const removeReaction = async (req, res, next) => {
     });
 
     if (!deleted) {
-      return res.status(404).json({ success: false, error: 'Reaction not found' });
+      return res.status(404).json({ success: false, error: 'Reaction pas trouve' });
     }
 
-    res.json({ success: true, data: { message: 'Reaction removed' } });
+    res.json({ success: true, data: { message: 'Reaction supprime' } });
   } catch (err) {
     next(err);
   }

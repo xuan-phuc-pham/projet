@@ -1,8 +1,10 @@
 const authService = require("../services/auth");
 
+// Middleware lié a auth, utilisation cookie, RBAC non concerné
+
 async function authenticate(req, res, next) {
   try {
-    // Get token from cookie or Authorization header
+
     let token = req.cookies?.session_token;
 
     if (!token) {
@@ -18,28 +20,28 @@ async function authenticate(req, res, next) {
         .json({ success: false, error: "Authentication required" });
     }
 
-    // Verify JWT
+    // JWT
     let decoded;
     try {
       decoded = authService.verifyToken(token);
     } catch (err) {
       return res
         .status(401)
-        .json({ success: false, error: "Invalid or expired token" });
+        .json({ success: false, error: "Token expiré ou invalide" });
     }
 
-    // Check session exists in DB (allows server-side revocation)
+    // Session existe dans DB
     const session = await authService.findSession(token);
     if (!session) {
       return res
         .status(401)
-        .json({ success: false, error: "Session expired or revoked" });
+        .json({ success: false, error: "Session expirée ou invalide" });
     }
 
-    // Load user with roles and permissions
+    // Check utilisateur avec Roleet permission, voir authService
     const result = await authService.getUserWithPermissions(decoded.userId);
     if (!result) {
-      return res.status(401).json({ success: false, error: "User not found" });
+      return res.status(401).json({ success: false, error: "Utilisateur introuvable" });
     }
 
     // Check if user is banned
@@ -47,7 +49,7 @@ async function authenticate(req, res, next) {
     if (isBanned) {
       return res
         .status(403)
-        .json({ success: false, error: "Account is banned" });
+        .json({ success: false, error: "Compte banni" });
     }
 
     req.user = result.user;

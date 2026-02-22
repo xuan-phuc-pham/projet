@@ -2,6 +2,9 @@ const { User, Role, UserRole, Session, sequelize } = require('../../db/models');
 const { hasPermission } = require('../middleware/authorize');
 const authService = require('../services/auth');
 
+
+// Tous ce qui lié aux control utilisateurs, 
+
 const list = async (req, res, next) => {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1);
@@ -52,7 +55,7 @@ const getById = async (req, res, next) => {
     ) {
       return res.status(403).json({
         success: false,
-        error: 'You can only view your own profile',
+        error: 'Vous ne pouvez seulement voir votre propre profil',
       });
     }
 
@@ -84,7 +87,7 @@ const update = async (req, res, next) => {
     if (!canEditAny && parseInt(req.params.id) !== req.user.id) {
       return res.status(403).json({
         success: false,
-        error: 'You can only edit your own profile',
+        error: 'Vous pouvez seulement modifier vos propres profils',
       });
     }
 
@@ -103,7 +106,7 @@ const update = async (req, res, next) => {
         if (!req.body.current_password) {
           return res.status(400).json({
             success: false,
-            error: 'current_password is required to change password',
+            error: 'MDP actuel obligatoire pour modifier le mot de passe',
           });
         }
         const valid = await authService.comparePassword(
@@ -111,7 +114,7 @@ const update = async (req, res, next) => {
           user.password,
         );
         if (!valid) {
-          return res.status(403).json({ success: false, error: 'Current password is incorrect' });
+          return res.status(403).json({ success: false, error: 'MDP actuel incorrect' });
         }
       }
       updates.password = await authService.hashPassword(req.body.password);
@@ -143,7 +146,7 @@ const remove = async (req, res, next) => {
     if (!canDeleteAny && parseInt(req.params.id) !== req.user.id) {
       return res.status(403).json({
         success: false,
-        error: 'You can only delete your own account',
+        error: 'Vous ne pouvez seulement supprimer vos propres profils',
       });
     }
 
@@ -159,7 +162,7 @@ const remove = async (req, res, next) => {
     const isRequesterAdmin = req.user.roles.some((r) => r.role_name === 'Admin');
 
     if (isTargetAdmin && !isRequesterAdmin) {
-      return res.status(403).json({ success: false, error: 'Cannot delete an admin account' });
+      return res.status(403).json({ success: false, error: 'Il est impossible de supprimer un compte Admin' });
     }
 
     const transaction = await sequelize.transaction();
@@ -173,7 +176,7 @@ const remove = async (req, res, next) => {
       throw err;
     }
 
-    res.json({ success: true, data: { message: 'User deleted' } });
+    res.json({ success: true, data: { message: 'Utilisateur supprime' } });
   } catch (err) {
     next(err);
   }
@@ -183,11 +186,11 @@ const ban = async (req, res, next) => {
   try {
     const user = await User.findByPk(req.params.id);
     if (!user) {
-      return res.status(404).json({ success: false, error: 'User not found' });
+      return res.status(404).json({ success: false, error: 'Utilisateur non trouve' });
     }
 
     if (user.id === req.user.id) {
-      return res.status(400).json({ success: false, error: 'Cannot ban yourself' });
+      return res.status(400).json({ success: false, error: 'Vous ne pouvez pas vous bannir' });
     }
 
     // Cannot ban admins
@@ -195,7 +198,7 @@ const ban = async (req, res, next) => {
     const targetRoles = await UserRole.findAll({ where: { u_id: user.id } });
     const isTargetAdmin = targetRoles.some((ur) => ur.r_id === adminRole.id);
     if (isTargetAdmin) {
-      return res.status(403).json({ success: false, error: 'Cannot ban an admin' });
+      return res.status(403).json({ success: false, error: 'Vous ne pouvez pas bannir un admin' });
     }
 
     const transaction = await sequelize.transaction();
@@ -215,7 +218,7 @@ const ban = async (req, res, next) => {
 
     res.json({
       success: true,
-      data: { message: `User ${user.username} has been banned` },
+      data: { message: `Utilisateur ${user.username} a ete banni` },
     });
   } catch (err) {
     next(err);
@@ -226,7 +229,7 @@ const unban = async (req, res, next) => {
   try {
     const user = await User.findByPk(req.params.id);
     if (!user) {
-      return res.status(404).json({ success: false, error: 'User not found' });
+      return res.status(404).json({ success: false, error: 'Utilisateur non trouve' });
     }
 
     const transaction = await sequelize.transaction();
@@ -243,7 +246,7 @@ const unban = async (req, res, next) => {
 
     res.json({
       success: true,
-      data: { message: `User ${user.username} has been unbanned` },
+      data: { message: `Utilisateur ${user.username} a ete debanni` },
     });
   } catch (err) {
     next(err);

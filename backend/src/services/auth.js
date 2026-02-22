@@ -5,13 +5,15 @@ const { User, Role, Permission, Session, UserRole, sequelize } = require('../../
 
 const SALT_ROUNDS = 10;
 
-// Cache for role lookups (role_name -> id)
+// Services lié aux authentification, un peu recommendé par chat
+
+// Cache pour les recherches de rôles (role_name -> id)
 const roleCache = {};
 
 async function getRoleByName(roleName) {
   if (roleCache[roleName]) return roleCache[roleName];
   const role = await Role.findOne({ where: { role_name: roleName } });
-  if (!role) throw new Error(`Role "${roleName}" not found in database`);
+  if (!role) throw new Error(`Rôle "${roleName}" introuvable dans la base de données`);
   roleCache[roleName] = role;
   return role;
 }
@@ -87,7 +89,7 @@ async function registerUser({ username, password, fname, lname }) {
       lname,
     }, { transaction });
 
-    // Assign default "User" role
+    // Attribuer le rôle "User" par défaut
     const userRole = await getRoleByName('User');
     await UserRole.create({
       u_id: user.id,

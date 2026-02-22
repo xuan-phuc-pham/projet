@@ -8,20 +8,18 @@ const router = express.Router();
 
 const commentRouter = require('./comments');
 
-// Mount comment sub-routes: /discussions/:discussionId/comments
+// Montage des sous-routes commentaires: /discussions/:discussionId/comments
 router.use('/:discussionId/comments', validateId('discussionId'), commentRouter);
 
-// =============================================
-// DISCUSSION CRUD
-// =============================================
+// DISCUSSIONS
 
-// GET /discussions - list all discussions (paginated)
+// GET /discussions - lister toutes les discussions (paginé)
 router.get('/', discussionController.list);
 
-// GET /discussions/:id - get a single discussion with comments and reactions
+// GET /discussions/:id - récupérer une discussion avec ses commentaires et réactions
 router.get('/:id', validateId('id'), discussionController.getById);
 
-// POST /discussions - create a discussion
+// POST /discussions - créer une discussion
 router.post('/',
   authenticate,
   requirePermission('discussion.create'),
@@ -32,7 +30,7 @@ router.post('/',
   discussionController.create
 );
 
-// PATCH /discussions/:id - update a discussion
+// PATCH /discussions/:id - modifier une discussion
 router.patch('/:id',
   validateId('id'),
   authenticate,
@@ -44,7 +42,7 @@ router.patch('/:id',
   discussionController.update
 );
 
-// DELETE /discussions/:id - delete a discussion
+// DELETE /discussions/:id - supprimer une discussion
 router.delete('/:id',
   validateId('id'),
   authenticate,
@@ -52,11 +50,10 @@ router.delete('/:id',
   discussionController.remove
 );
 
-// =============================================
-// DISCUSSION REACTIONS
-// =============================================
 
-// POST /discussions/:id/reactions - add/update reaction on a discussion
+// RÉACTIONS DE DISCUSSION
+
+// POST /discussions/:id/reactions - ajouter/modifier une réaction sur une discussion
 router.post('/:id/reactions',
   validateId('id'),
   authenticate,
@@ -67,7 +64,7 @@ router.post('/:id/reactions',
   discussionController.addReaction
 );
 
-// DELETE /discussions/:id/reactions - remove own reaction from a discussion
+// DELETE /discussions/:id/reactions - supprimer sa réaction d'une discussion
 router.delete('/:id/reactions',
   validateId('id'),
   authenticate,

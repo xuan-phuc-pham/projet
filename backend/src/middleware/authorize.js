@@ -1,4 +1,6 @@
-// Checks that the authenticated user has at least one of the listed permissions
+// RBAC
+
+
 function requirePermission(...permissions) {
   return (req, res, next) => {
     if (!req.user || !req.permissions) {

@@ -6,10 +6,13 @@ const commentController = require('../controllers/commentController');
 
 const router = express.Router({ mergeParams: true });
 
-// GET /discussions/:discussionId/comments - list comments for a discussion
+// =============================================
+// COMMENTAIRES
+
+// GET /discussions/:discussionId/comments - lister les commentaires d'une discussion
 router.get('/', commentController.list);
 
-// POST /discussions/:discussionId/comments - create a comment
+// POST /discussions/:discussionId/comments - créer un commentaire
 router.post('/',
   authenticate,
   requirePermission('comment.create'),
@@ -19,7 +22,7 @@ router.post('/',
   commentController.create
 );
 
-// PATCH /discussions/:discussionId/comments/:commentId - update a comment
+// PATCH /discussions/:discussionId/comments/:commentId - modifier un commentaire
 router.patch('/:commentId',
   validateId('commentId'),
   authenticate,
@@ -30,7 +33,7 @@ router.patch('/:commentId',
   commentController.update
 );
 
-// DELETE /discussions/:discussionId/comments/:commentId - delete a comment
+// DELETE /discussions/:discussionId/comments/:commentId - supprimer un commentaire
 router.delete('/:commentId',
   validateId('commentId'),
   authenticate,
@@ -39,10 +42,9 @@ router.delete('/:commentId',
 );
 
 // =============================================
-// COMMENT REACTIONS
-// =============================================
+// RÉACTIONS DE COMMENTAIRE
 
-// POST /discussions/:discussionId/comments/:commentId/reactions
+// POST /discussions/:discussionId/comments/:commentId/reactions - ajouter/modifier une réaction
 router.post('/:commentId/reactions',
   validateId('commentId'),
   authenticate,
@@ -53,7 +55,7 @@ router.post('/:commentId/reactions',
   commentController.addReaction
 );
 
-// DELETE /discussions/:discussionId/comments/:commentId/reactions
+// DELETE /discussions/:discussionId/comments/:commentId/reactions - supprimer sa réaction
 router.delete('/:commentId/reactions',
   validateId('commentId'),
   authenticate,

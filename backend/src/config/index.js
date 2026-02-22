@@ -8,5 +8,5 @@ module.exports = {
   port: process.env.PORT || 3000,
   jwtSecret: process.env.JWT_SECRET || 'dev-jwt-secret-change-in-production',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '24h',
-  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
+  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173', // Le front-end n'est pas encore dévéloppée mais utilisé par le cors
 };

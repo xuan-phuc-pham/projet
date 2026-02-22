@@ -6,17 +6,19 @@ const userController = require('../controllers/userController');
 
 const router = express.Router();
 
-// GET /users - list users (paginated)
+// Route lié aux utilisateurs
+
+// GET /users - lister les utilisateurs (paginé)
 router.get('/',
   authenticate,
   requirePermission('user.read.any'),
   userController.list
 );
 
-// GET /users/me - current user profile
+// GET /users/me - profil de l'utilisateur connecté
 router.get('/me', authenticate, userController.getMe);
 
-// GET /users/:id - get a single user
+// GET /users/:id - récupérer un utilisateur
 router.get('/:id',
   validateId('id'),
   authenticate,
@@ -24,7 +26,7 @@ router.get('/:id',
   userController.getById
 );
 
-// PATCH /users/:id - update a user
+// PATCH /users/:id - modifier un utilisateur
 router.patch('/:id',
   validateId('id'),
   authenticate,
@@ -38,7 +40,7 @@ router.patch('/:id',
   userController.update
 );
 
-// DELETE /users/:id - delete a user
+// DELETE /users/:id - supprimer un utilisateur
 router.delete('/:id',
   validateId('id'),
   authenticate,
@@ -46,7 +48,7 @@ router.delete('/:id',
   userController.remove
 );
 
-// POST /users/:id/ban - ban a user
+// POST /users/:id/ban - bannir un utilisateur
 router.post('/:id/ban',
   validateId('id'),
   authenticate,
@@ -54,7 +56,7 @@ router.post('/:id/ban',
   userController.ban
 );
 
-// POST /users/:id/unban - unban a user (restore to User role)
+// POST /users/:id/unban - débannir un utilisateur (remettre le rôle User)
 router.post('/:id/unban',
   validateId('id'),
   authenticate,

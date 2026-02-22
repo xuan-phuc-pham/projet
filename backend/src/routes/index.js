@@ -6,18 +6,18 @@ const discussionRoutes = require('./discussions');
 
 const router = express.Router();
 
-// Health check route
+// Route de vérification de santé du serveur
 router.get('/health', (req, res) => {
   res.json({ success: true, data: { status: 'ok' } });
 });
 
-// Auth-related routes
+// Routes d'authentification
 router.use('/auth', authRoutes);
 
-// User-related routes
+// Routes utilisateurs
 router.use('/users', userRoutes);
 
-// Discussion-related routes
+// Routes discussions
 router.use('/discussions', discussionRoutes);
 
 module.exports = router;

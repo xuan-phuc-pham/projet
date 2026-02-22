@@ -6,11 +6,15 @@ const authController = require('../controllers/authController');
 
 const router = express.Router();
 
+// Routes lié aux auth
+
+// Suggesté par chat, contre brute force
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 20,
-  message: { success: false, error: 'Too many attempts, please try again later' },
+  message: { success: false, error: 'Trop de tentatives, veuillez réessayer plus tard' },
 });
+
 
 // POST /auth/register
 router.post('/register',
